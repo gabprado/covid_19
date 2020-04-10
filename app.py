@@ -17,10 +17,10 @@ db = SQLAlchemy(app)
 Base = automap_base()
 Base.prepare(db.engine, reflect=True)
 
-# global_data = Base.classes.global_covid_data
-# us_data = Base.classes.us_covid_data
-# us_lookup = Base.classes.us_lookup
-# session = db.session
+global_data = Base.classes.global_covid_data
+us_data = Base.classes.us_covid_data
+us_lookup = Base.classes.us_lookup
+session = db.session
 
 
 @app.route("/")
