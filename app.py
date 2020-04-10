@@ -167,7 +167,7 @@ def get_country_data(country, data_point):
         )
         .filter(global_data.Country_Region == country)
         .group_by(global_data.Country_Region, global_data.Date)
-        .order_by(global_data.Country_Region)
+        .order_by(global_data.Date)
     ).statement
     country_results = pd.read_sql_query(qry, db.engine)
     data = {
