@@ -19,6 +19,7 @@ blackcellmagic = "*"
 pymongo = "*"
 flask-pymongo = "*"
 gunicorn = "*"
+plotly = "*"
 
 [requires]
 python_version = "3.8"
