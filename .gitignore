@@ -1,5 +1,6 @@
 # misc
 db_config.py
+data/
 # mac junk files
 .DS_Store
 # API files
