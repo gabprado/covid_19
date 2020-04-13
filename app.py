@@ -10,7 +10,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = (
-    os.environ.get("JAWSDB_URL", "") or "sqlite:///Data/covid19.sqlite"
+    os.environ.get("JAWSDB_URL", "") or "sqlite:///Stage/Data/covid19.sqlite"
 )
 db = SQLAlchemy(app)
 
@@ -29,17 +29,28 @@ def index():
     return result
 
 
-@app.route("/country_snapshot")
+@app.route("/sandbox")
 def country_snapshot():
-    result = render_template("country_snapshot.html")
+    result = render_template("sandbox.html")
     return result
 
+@app.route("/country_list")
+def get_country_list():
+    qry = (
+        session.query(global_data.Country_Region)
+        .distinct()
+        .order_by(global_data.Country_Region)
+        .statement
+    )
+    df = pd.read_sql_query(qry, db.engine).rename(columns={"Country_Region": "Country"})
+    data = {"Country": df.Country.values.tolist()}
+    return jsonify(data)
 
-@app.route("/global_data/<country>/<data_point>")
-def get_country_data(country, data_point):
+@app.route("/global_data/<country>")
+def get_country_data(country):
     qry = (
         session.query(
-            global_data.ID,
+            # global_data.ID,
             global_data.Country_Region,
             global_data.Date,
             func.sum(global_data.Confirmed_Cases),
@@ -47,16 +58,36 @@ def get_country_data(country, data_point):
             func.sum(global_data.Recovered),
         )
         .filter(global_data.Country_Region == country)
-        .group_by(global_data.ID, global_data.Country_Region, global_data.Date)
-        .order_by(global_data.ID)
+        .group_by( global_data.Country_Region, global_data.Date)
     ).statement
-    country_results = pd.read_sql_query(qry, db.engine)
+    df = pd.read_sql_query(qry, db.engine).rename(
+    columns={
+        "Country_Region": "Country",
+        "sum_1": "Confirmed",
+        "sum_2": "Deaths",
+        "sum_3": "Recovered",
+    })
+    df["Date"] = pd.to_datetime(df["Date"]).dt.strftime("%Y-%m-%d")
+    df = df.sort_values(by=["Date"])
+    df["Deltas_Confirmed"] = df.Confirmed.diff()
+    df["Five_Day_Avg_Confirmed"] = df.Deltas_Confirmed.rolling(window = 5).mean()
+    df["Deltas_Deaths"] = df.Deaths.diff()
+    df["Five_Day_Avg_Deaths"] = df.Deltas_Deaths.rolling(window = 5).mean()
+    df["Deltas_Recovered"] = df.Recovered.diff()
+    df["Five_Day_Avg_Recovered"] = df.Deltas_Recovered.rolling(window = 5).mean()
+    df = df.fillna(0)
     data = {
-        "Date": country_results.Date.values.tolist(),
-        "Confirmed_Cases": country_results.sum_1.values.tolist(),
-        "Deaths": country_results.sum_2.values.tolist(),
-        "Recovered": country_results.sum_3.values.tolist(),
-    }
+        "Date": df.Date.values.tolist(),
+        "Confirmed_Cases": df.Confirmed.values.tolist(),
+        "Deltas_Confirmed": df.Deltas_Confirmed.values.tolist(),
+        "Five_Day_Avg_Confirmed": df.Five_Day_Avg_Confirmed.values.tolist(),
+        "Deaths": df.Deaths.values.tolist(),
+        "Deltas_Deaths": df.Deltas_Deaths.values.tolist(),
+        "Five_Day_Avg_Deaths": df.Five_Day_Avg_Deaths.values.tolist(),
+        "Recovered": df.Recovered.values.tolist(),
+        "Deltas_Recovered": df.Deltas_Recovered.values.tolist(),
+        "Five_Day_Avg_Recovered": df.Five_Day_Avg_Recovered.values.tolist(),
+        }
     return jsonify(data)
 
 
