@@ -18,7 +18,63 @@ function get_country_options() {
 function updateFilters() {
     const changedElement = d3.select(this).select("select");
     const elementValue = changedElement.property("value");
-    buildCountrySnapshot(elementValue)
+    buildCountrySnapshot(elementValue,"confirmed")
+    buildCountrySnapshot(elementValue,"deaths")
+    buildCountrySnapshot(elementValue,"recovered")
+    renderAnalysis(elementValue) 
+}
+
+function renderAnalysis(country) {
+    d3.json(`/global_data/${country}`).then((analysisData) => {
+        d3.select("#country-label").html(country)
+        d3.select("#summary-text").html(analysisData.Analysis_Summary)
+        // let data = [{
+        //     type: "indicatior",
+        //     mode: "number+delta",
+        //     number: {
+        //         prefix: "$"
+        //     },
+        //     value: 400,
+        //     delta:{
+        //         position: "top",
+        //         reference: 320
+        //     },
+        //     domain: {
+        //         x: [0,1],
+        //         y: [0,1]
+        //     }
+        // }]
+        // let layout = {
+        //     paper_bgcolor: "lightgray",
+        //     width: 600,
+        //     height:200,
+        //     margin: {
+        //         t: 0,
+        //         b: 0,
+        //         l: 0,
+        //         r: 0
+        //     }
+        // }
+        // Plotly.newPlot("current-case-avg",data, layout)
+        let data = [
+            {
+              type: "indicator",
+              mode: "delta",
+              value: analysisData.Analysis_Confirmed_Status,
+              delta: { position: "top", reference: 0 },
+              domain: { x: [0, 1], y: [0, 1] }
+            }
+          ];
+          let layout = {
+            paper_bgcolor: "white",
+            // width: 200,
+             height: 50,
+            margin: { t: 0, b: 0, l: 0, r: 0 }
+          };
+          
+          Plotly.newPlot('current-case-avg', data, layout);
+    })
+
 }
 
 function buildCountrySnapshot(country, metric) {
@@ -75,7 +131,11 @@ function buildCountrySnapshot(country, metric) {
     
 };
 d3.selectAll(".filter").on("change", updateFilters)
+renderAnalysis("US") 
 buildCountrySnapshot("US", "confirmed")
 buildCountrySnapshot("US", "deaths")
 buildCountrySnapshot("US", "recovered")
 get_country_options()
+
+
+

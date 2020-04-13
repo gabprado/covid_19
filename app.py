@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import json
+from datetime import datetime, date
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
@@ -34,6 +35,7 @@ def country_snapshot():
     result = render_template("sandbox.html")
     return result
 
+
 @app.route("/country_list")
 def get_country_list():
     qry = (
@@ -45,6 +47,7 @@ def get_country_list():
     df = pd.read_sql_query(qry, db.engine).rename(columns={"Country_Region": "Country"})
     data = {"Country": df.Country.values.tolist()}
     return jsonify(data)
+
 
 @app.route("/global_data/<country>")
 def get_country_data(country):
@@ -58,24 +61,52 @@ def get_country_data(country):
             func.sum(global_data.Recovered),
         )
         .filter(global_data.Country_Region == country)
-        .group_by( global_data.Country_Region, global_data.Date)
+        .group_by(global_data.Country_Region, global_data.Date)
     ).statement
     df = pd.read_sql_query(qry, db.engine).rename(
-    columns={
-        "Country_Region": "Country",
-        "sum_1": "Confirmed",
-        "sum_2": "Deaths",
-        "sum_3": "Recovered",
-    })
+        columns={
+            "Country_Region": "Country",
+            "sum_1": "Confirmed",
+            "sum_2": "Deaths",
+            "sum_3": "Recovered",
+        }
+    )
     df["Date"] = pd.to_datetime(df["Date"]).dt.strftime("%Y-%m-%d")
     df = df.sort_values(by=["Date"])
     df["Deltas_Confirmed"] = df.Confirmed.diff()
-    df["Five_Day_Avg_Confirmed"] = df.Deltas_Confirmed.rolling(window = 5).mean()
+    df["Five_Day_Avg_Confirmed"] = df.Deltas_Confirmed.rolling(window=5).mean()
     df["Deltas_Deaths"] = df.Deaths.diff()
-    df["Five_Day_Avg_Deaths"] = df.Deltas_Deaths.rolling(window = 5).mean()
+    df["Five_Day_Avg_Deaths"] = df.Deltas_Deaths.rolling(window=5).mean()
     df["Deltas_Recovered"] = df.Recovered.diff()
-    df["Five_Day_Avg_Recovered"] = df.Deltas_Recovered.rolling(window = 5).mean()
+    df["Five_Day_Avg_Recovered"] = df.Deltas_Recovered.rolling(window=5).mean()
     df = df.fillna(0)
+    # get analysis fields
+    first_case_df = df.loc[df["Confirmed"] > 0 ]
+    first_case_df = first_case_df.head(1)
+    current_state_df = df.tail(2)
+    current_state_df[
+        "Confirmed_Status"
+    ] = current_state_df.Five_Day_Avg_Confirmed.diff()
+    current_state_df["Deaths_Status"] = current_state_df.Five_Day_Avg_Deaths.diff()
+    current_state_df[
+        "Recovered_Status"
+    ] = current_state_df.Five_Day_Avg_Recovered.diff()
+    first_date = first_case_df.iloc[0, 1]
+    days_since_first_case = (
+        (datetime.strptime(current_state_df.iloc[1, 1], "%Y-%m-%d"))
+        - (datetime.strptime(first_date, "%Y-%m-%d"))
+    ).days
+    confirmed_current = "{:,}".format(current_state_df.iloc[1, 2])
+    deaths_current = "{:,}".format(int(current_state_df.iloc[1, 3]))
+    recovered_current = "{:,}".format(int(current_state_df.iloc[1, 4]))
+    confirmed_status = int(current_state_df.iloc[1, 11])
+    summary = (
+        f"The first case of COVID-19 in {country} was reported {days_since_first_case} days ago on "
+        f"{datetime.strptime(first_date, '%Y-%m-%d').strftime('%B %d, %Y')}. "
+        f"Since then, the country has reported {confirmed_current} cases, and {deaths_current} deaths. "
+        f"The current number of recovered cases is {recovered_current}."
+    )
+
     data = {
         "Date": df.Date.values.tolist(),
         "Confirmed_Cases": df.Confirmed.values.tolist(),
@@ -87,7 +118,9 @@ def get_country_data(country):
         "Recovered": df.Recovered.values.tolist(),
         "Deltas_Recovered": df.Deltas_Recovered.values.tolist(),
         "Five_Day_Avg_Recovered": df.Five_Day_Avg_Recovered.values.tolist(),
-        }
+        "Analysis_Confirmed_Status": confirmed_status,
+        "Analysis_Summary": summary
+    }
     return jsonify(data)
 
 
