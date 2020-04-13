@@ -26,6 +26,9 @@
                 <li class="nav-item">
                   <a class="nav-link" href="/import_data">Refresh Database</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/country_snapshot">Country Snapshot</a>
+                  </li>
                 <li class="nav-item dropdown">
                   <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     API Data
@@ -43,56 +46,8 @@
     </div>
     <div class="container">
         <div class = content>
-            <h1 class="display-5">Country Snapshot</h1>
-            <div id = filter_box>
-                <div class="col-md-12">
-                    <form class="form-inline">
-                        <div class= "filter">
-                            <label for="country">Country:</label>
-                            <select id="country">
-                                <option value = "US" selected>United States</option>
-                            </select>
-                        </div>
-                      </form>
-                </div>
-            </div>
-            <div class="container">
-                <div class="data-viz">
-                    <div class="container">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <h5 id="country-label"></h5>
-                            </div>
-                            <div class="col-md-3">
-                                <p id = "header-label">New Confirmed Cases Each Day (5 Day Average)</p>
-                            </div>
-                            <div class="col-md-1">
-                                <div id="current-case-avg"></div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-12">
-                                <p id = "summary-text">This is the summary test</p>
-                        </div>
-                    </div>        
-                    </div>
-                    <div class="container">
-                        <div class="row">
-                            <div class ="col-md-12">
-                                <div id="snapshot_confirmed"></div>
-                            </div>
-                        </div>
-                        <div class ="row">
-                            <div class="col-md-6">
-                                <div id="snapshot_deaths"></div>
-                            </div>
-                            <div class="col-md-6">
-                                <div id="snapshot_recovered"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <h1 class="display-5">Global Data</h1>
+            <div id="global-cases"></div>
         </div>
     </div>
 
@@ -116,6 +71,6 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.5.0/d3.js"></script>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script> 
-    <script src="{{ url_for('static', filename='js/country_snapshot.js') }}"></script>         
+    <script src="{{ url_for('static', filename='js/global.js') }}"></script>         
 </body>
 </html>

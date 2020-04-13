@@ -30,8 +30,14 @@ def index():
     return result
 
 
-@app.route("/sandbox")
+@app.route("/country_snapshot")
 def country_snapshot():
+    result = render_template("country_snapshot.html")
+    return result
+
+
+@app.route("/sandbox")
+def sandbox():
     result = render_template("sandbox.html")
     return result
 
@@ -81,7 +87,7 @@ def get_country_data(country):
     df["Five_Day_Avg_Recovered"] = df.Deltas_Recovered.rolling(window=5).mean()
     df = df.fillna(0)
     # get analysis fields
-    first_case_df = df.loc[df["Confirmed"] > 0 ]
+    first_case_df = df.loc[df["Confirmed"] > 0]
     first_case_df = first_case_df.head(1)
     current_state_df = df.tail(2)
     current_state_df[
@@ -119,20 +125,47 @@ def get_country_data(country):
         "Deltas_Recovered": df.Deltas_Recovered.values.tolist(),
         "Five_Day_Avg_Recovered": df.Five_Day_Avg_Recovered.values.tolist(),
         "Analysis_Confirmed_Status": confirmed_status,
-        "Analysis_Summary": summary
+        "Analysis_Summary": summary,
     }
     return jsonify(data)
 
 
 @app.route("/global_data")
 def get_global_data():
-    countries = (
-        session.query(global_data.Country_Region)
-        .distinct()
-        .order_by(global_data.Country_Region)
-        .all()
-    )
-    global_covid_results = (
+    # countries = (
+    #     session.query(global_data.Country_Region)
+    #     .distinct()
+    #     .order_by(global_data.Country_Region)
+    #     .all()
+    # )
+    # global_covid_results = (
+    #     session.query(
+    #         global_data.Country_Region,
+    #         global_data.Date,
+    #         func.sum(global_data.Confirmed_Cases),
+    #         func.sum(global_data.Deaths),
+    #         func.sum(global_data.Recovered),
+    #     )
+    #     .group_by(global_data.Country_Region, global_data.Date)
+    #     .order_by(global_data.Country_Region)
+    # ).all()
+
+    # def get_country_covid_data(country):
+    #     data = {}
+    #     for rec in global_covid_results:
+    #         if rec[0] == country:
+    #             data[rec[1]] = {
+    #                 "Confirmed_Cases": int(rec[2]),
+    #                 "Deaths": int(rec[3]),
+    #                 "Recovered": int(rec[4]),
+    #             }
+    #     return data
+
+    # global_dict = [
+    #     {"Country": country[0], "Data": get_country_covid_data(country[0])}
+    #     for country in countries
+    # ]
+    qry = (
         session.query(
             global_data.Country_Region,
             global_data.Date,
@@ -141,26 +174,30 @@ def get_global_data():
             func.sum(global_data.Recovered),
         )
         .group_by(global_data.Country_Region, global_data.Date)
-        .order_by(global_data.Country_Region)
-    ).all()
-
-    def get_country_covid_data(country):
-        data = {}
-        for rec in global_covid_results:
-            if rec[0] == country:
-                data[rec[1]] = {
-                    "Confirmed_Cases": int(rec[2]),
-                    "Deaths": int(rec[3]),
-                    "Recovered": int(rec[4]),
-                }
-        return data
-
-    global_dict = [
-        {"Country": country[0], "Data": get_country_covid_data(country[0])}
-        for country in countries
-    ]
-
-    return jsonify(global_dict)
+        .order_by(global_data.Date)
+    ).statement
+    df = (
+        pd.read_sql_query(qry, db.engine)
+        .rename(
+            columns={
+                "Country_Region": "Country",
+                "sum_1": "Confirmed",
+                "sum_2": "Deaths",
+                "sum_3": "Recovered",
+            }
+        )
+        .astype({"Confirmed": "int32", "Deaths": "int32", "Recovered": "int32"})
+    )
+    df["Date"] = pd.to_datetime(df["Date"]).dt.strftime("%Y-%m-%d")
+    df = df.sort_values(by="Date")
+    data = {
+        "Country": df.Country.values.tolist(),
+        "Date": df.Date.values.tolist(),
+        "Confirmed": df.Confirmed.values.tolist(),
+        "Deaths": df.Deaths.values.tolist(),
+        "Recovered": df.Recovered.values.tolist(),
+    }
+    return jsonify(data)
 
 
 @app.route("/import_data")
