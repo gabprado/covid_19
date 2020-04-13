@@ -18,9 +18,9 @@ Included in the country snapshot page, you will see two other plots highlighting
 
 * * *
 
- ## Enhancements
+ ## Upcoming Enhancements
 
- There is currently a plot that illustrates the virus spread in an animated timeseries choropleth plot. A sample of the plot is illustrated below.
+ Work is being done to add in a plot that illustrates the virus spread in an animated timeseries choropleth plot. A sample of the plot is illustrated below.
 
  <img src="static/assets/img/readme/virus_spread.png">
 
