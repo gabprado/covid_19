@@ -59,7 +59,6 @@ def get_country_list():
 def get_country_data(country):
     qry = (
         session.query(
-            # global_data.ID,
             global_data.Country_Region,
             global_data.Date,
             func.sum(global_data.Confirmed_Cases),
@@ -132,39 +131,6 @@ def get_country_data(country):
 
 @app.route("/global_data")
 def get_global_data():
-    # countries = (
-    #     session.query(global_data.Country_Region)
-    #     .distinct()
-    #     .order_by(global_data.Country_Region)
-    #     .all()
-    # )
-    # global_covid_results = (
-    #     session.query(
-    #         global_data.Country_Region,
-    #         global_data.Date,
-    #         func.sum(global_data.Confirmed_Cases),
-    #         func.sum(global_data.Deaths),
-    #         func.sum(global_data.Recovered),
-    #     )
-    #     .group_by(global_data.Country_Region, global_data.Date)
-    #     .order_by(global_data.Country_Region)
-    # ).all()
-
-    # def get_country_covid_data(country):
-    #     data = {}
-    #     for rec in global_covid_results:
-    #         if rec[0] == country:
-    #             data[rec[1]] = {
-    #                 "Confirmed_Cases": int(rec[2]),
-    #                 "Deaths": int(rec[3]),
-    #                 "Recovered": int(rec[4]),
-    #             }
-    #     return data
-
-    # global_dict = [
-    #     {"Country": country[0], "Data": get_country_covid_data(country[0])}
-    #     for country in countries
-    # ]
     qry = (
         session.query(
             global_data.Country_Region,
